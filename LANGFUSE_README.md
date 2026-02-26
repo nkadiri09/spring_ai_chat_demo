@@ -27,6 +27,8 @@ export LANGFUSE_PUBLIC_KEY=pk-lf-...
 export LANGFUSE_SECRET_KEY=sk-lf-...
 # Optional: for self-hosted Langfuse
 export LANGFUSE_HOST=https://your-langfuse-instance.com
+# Optional: trust all SSL certificates (for self-signed certs in dev/test)
+export LANGFUSE_TRUST_ALL_CERTS=true
 ```
 
 Or add them to your `application.properties`:
@@ -36,9 +38,31 @@ langfuse.enabled=true
 langfuse.public-key=pk-lf-...
 langfuse.secret-key=sk-lf-...
 langfuse.host=https://cloud.langfuse.com
+# WARNING: Only enable for development/testing with self-signed certificates!
+langfuse.trust-all-certificates=false
 ```
 
-### 4. Run the Application
+### 4. Self-Signed SSL Certificates
+
+If you're running a self-hosted Langfuse instance with self-signed SSL certificates, you can configure the client to trust all certificates:
+
+```properties
+langfuse.trust-all-certificates=true
+```
+
+Or via environment variable:
+
+```bash
+export LANGFUSE_TRUST_ALL_CERTS=true
+```
+
+**⚠️ WARNING:** This disables SSL certificate verification and should **ONLY** be used for development/testing environments. Never use this in production!
+
+The implementation creates a custom OkHttpClient with:
+- A TrustManager that accepts all certificates
+- A HostnameVerifier that accepts all hostnames
+
+### 5. Run the Application
 
 ```bash
 ./gradlew bootRun

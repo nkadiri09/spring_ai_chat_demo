@@ -6,13 +6,18 @@ import com.langfuse.client.resources.ingestion.requests.IngestionRequest;
 import com.langfuse.client.resources.ingestion.types.*;
 import com.langfuse.client.resources.commons.types.Usage;
 import com.langfuse.client.resources.commons.types.ObservationLevel;
+import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import javax.net.ssl.*;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Service for sending traces to Langfuse using the official Java SDK.
@@ -29,14 +34,74 @@ public class LangfuseService {
         this.properties = properties;
 
         if (properties.isConfigured()) {
-            this.client = new LangfuseClientBuilder()
+            LangfuseClientBuilder builder = new LangfuseClientBuilder()
                     .url(properties.getHost())
-                    .credentials(properties.getPublicKey(), properties.getSecretKey())
-                    .build();
+                    .credentials(properties.getPublicKey(), properties.getSecretKey());
+
+            // If trust-all-certificates is enabled, create custom OkHttpClient
+            if (properties.isTrustAllCertificates()) {
+                OkHttpClient trustAllClient = createTrustAllOkHttpClient();
+                if (trustAllClient != null) {
+                    builder.httpClient(trustAllClient);
+                    logger.warn("Langfuse client configured to trust ALL SSL certificates. " +
+                            "This should only be used for development/testing with self-signed certs!");
+                }
+            }
+
+            this.client = builder.build();
             logger.info("Langfuse client initialized with host: {}", properties.getHost());
         } else {
             this.client = null;
             logger.warn("Langfuse is not configured. Set langfuse.public-key and langfuse.secret-key");
+        }
+    }
+
+    /**
+     * Creates an OkHttpClient that trusts all SSL certificates.
+     * WARNING: This should only be used for development/testing with self-signed certificates!
+     */
+    private OkHttpClient createTrustAllOkHttpClient() {
+        try {
+            // Create a TrustManager that trusts all certificates
+            TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                            // Trust all client certificates
+                        }
+
+                        @Override
+                        public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                            // Trust all server certificates
+                        }
+
+                        @Override
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return new X509Certificate[0];
+                        }
+                    }
+            };
+
+            // Create SSLContext with the trust-all TrustManager
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAllCerts, new SecureRandom());
+            SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+
+            // Create HostnameVerifier that accepts all hostnames
+            HostnameVerifier trustAllHostnames = (hostname, session) -> true;
+
+            // Build OkHttpClient with trust-all configuration
+            return new OkHttpClient.Builder()
+                    .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
+                    .hostnameVerifier(trustAllHostnames)
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .writeTimeout(30, TimeUnit.SECONDS)
+                    .build();
+
+        } catch (Exception e) {
+            logger.error("Failed to create trust-all OkHttpClient", e);
+            return null;
         }
     }
 

@@ -14,6 +14,7 @@ public class LangfuseProperties {
     private String publicKey;
     private String secretKey;
     private String host = "https://cloud.langfuse.com";
+    private boolean trustAllCertificates = false;
 
     public boolean isEnabled() {
         return enabled;
@@ -45,6 +46,14 @@ public class LangfuseProperties {
 
     public void setHost(String host) {
         this.host = host;
+    }
+
+    public boolean isTrustAllCertificates() {
+        return trustAllCertificates;
+    }
+
+    public void setTrustAllCertificates(boolean trustAllCertificates) {
+        this.trustAllCertificates = trustAllCertificates;
     }
 
     public boolean isConfigured() {
