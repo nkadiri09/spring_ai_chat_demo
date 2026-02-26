@@ -1,5 +1,0 @@
-spring:
-  ai:
-    openai:
-      api-key: ${groq_api_key}
-      base-url: https://api.groq.com/openai

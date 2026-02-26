@@ -20,7 +20,6 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.17.0"  // ← first
         mavenBom "org.springframework.ai:spring-ai-bom:1.0.0"
     }
 }
@@ -30,10 +29,9 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-    implementation 'io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter'
+    // Langfuse Java SDK (without OpenTelemetry)
+    implementation 'com.langfuse:langfuse-java:0.1.2'
 }
 
 test {

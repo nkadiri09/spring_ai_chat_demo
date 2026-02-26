@@ -1,6 +1,7 @@
 package com.naren.kadiri.chatdemo;
 
 
+import com.naren.kadiri.chatdemo.langfuse.LangfuseAdvisor;
 import org.springframework.ai.chat.client.*;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.*;
@@ -13,9 +14,10 @@ public class ChatController {
 
     private final ChatClient chatClient;
 
-    public ChatController(ChatClient.Builder chatClientBuilder) {
+    public ChatController(ChatClient.Builder chatClientBuilder, LangfuseAdvisor langfuseAdvisor) {
         this.chatClient = chatClientBuilder
                 .defaultSystem("You are a helpful assistant powered by Groq.")
+                .defaultAdvisors(List.of(langfuseAdvisor))
                 .build();
     }
 
